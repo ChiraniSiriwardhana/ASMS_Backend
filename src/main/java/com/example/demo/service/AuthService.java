@@ -18,7 +18,7 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public String signup(SignupRequest request) {
+    public AuthResponse signup(SignupRequest request) {
         Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
         if (existingUser.isPresent()) {
             throw new RuntimeException("Email already registered");
@@ -31,11 +31,19 @@ public class AuthService {
                 .role(request.getRole())
                 .build();
 
-        userRepository.save(user);
-        return "User registered successfully";
+        User savedUser = userRepository.save(user);
+        
+        return new AuthResponse(
+                savedUser.getId(),
+                savedUser.getName(),
+                savedUser.getEmail(),
+                savedUser.getRole(),
+                "User registered successfully",
+                null
+        );
     }
 
-    public String login(LoginRequest request) {
+    public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -43,8 +51,15 @@ public class AuthService {
             throw new RuntimeException("Invalid credentials");
         }
 
-        // For now return success (later replace with JWT)
-        return "Login successful for " + user.getName();
+        // Return user details for frontend
+        return new AuthResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole(),
+                "Login successful",
+                null // JWT token will be added later
+        );
     }
 }
 

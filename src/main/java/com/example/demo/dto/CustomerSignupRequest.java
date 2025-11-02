@@ -36,6 +36,10 @@ public class CustomerSignupRequest {
     @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be 10 digits")
     private String phoneNumber;
 
+    // Address is optional, not required for customer signup
     private String address;
+    
+    // Role is optional, defaults to ROLE_CUSTOMER if not provided
+    private String role;
 }
 

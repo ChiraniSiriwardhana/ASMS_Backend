@@ -61,5 +61,17 @@ public class AdminController {
         ApiResponse response = adminService.resendEmployeeActivationEmail(id);
         return ResponseEntity.ok(response);
     }
+
+    @PutMapping("/employees/{id}")
+    public ResponseEntity<ApiResponse> updateEmployee(@PathVariable Long id, @Valid @RequestBody EmployeeRequest request) {
+        ApiResponse response = adminService.updateEmployee(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/employees/{id}")
+    public ResponseEntity<ApiResponse> deleteEmployee(@PathVariable Long id) {
+        ApiResponse response = adminService.deleteEmployee(id);
+        return ResponseEntity.ok(response);
+    }
 }
 

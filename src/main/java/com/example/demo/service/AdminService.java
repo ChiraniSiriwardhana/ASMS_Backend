@@ -28,10 +28,10 @@ public class AdminService {
 
     @Transactional
     public ApiResponse addEmployee(EmployeeRequest request) {
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new BadRequestException("Username already exists");
-        }
-
+        // Generate username from name (lowercase, remove spaces)
+        String username = request.getName().toLowerCase().replaceAll("\\s+", "") + 
+                         System.currentTimeMillis() % 10000;
+        
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new BadRequestException("Email already exists");
         }
@@ -40,14 +40,21 @@ public class AdminService {
         String resetToken = UUID.randomUUID().toString();
         LocalDateTime tokenExpiry = LocalDateTime.now().plusHours(24);
 
+        // Split name into first and last name
+        String[] nameParts = request.getName().trim().split("\\s+", 2);
+        String firstName = nameParts[0];
+        String lastName = nameParts.length > 1 ? nameParts[1] : "";
+
         User employee = User.builder()
-                .username(request.getUsername())
+                .username(username)
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(UUID.randomUUID().toString())) // Temporary random password
                 .role(Role.EMPLOYEE)
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .phoneNumber(request.getPhoneNumber())
+                .firstName(firstName)
+                .lastName(lastName)
+                .phoneNumber(request.getPhone())
+                .position(request.getPosition())
+                .department(request.getDepartment())
                 .isActive(true)
                 .isPasswordChanged(false)
                 .resetToken(resetToken)
@@ -149,6 +156,64 @@ public class AdminService {
                 .build();
     }
 
+    @Transactional
+    public ApiResponse updateEmployee(Long id, EmployeeRequest request) {
+        User employee = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
+
+        if (employee.getRole() != Role.EMPLOYEE) {
+            throw new BadRequestException("User is not an employee");
+        }
+
+        // Check if email is being changed and already exists
+        if (!employee.getEmail().equals(request.getEmail()) && 
+            userRepository.existsByEmail(request.getEmail())) {
+            throw new BadRequestException("Email already exists");
+        }
+
+        // Split name into first and last name
+        String[] nameParts = request.getName().trim().split("\\s+", 2);
+        String firstName = nameParts[0];
+        String lastName = nameParts.length > 1 ? nameParts[1] : "";
+
+        // Update employee details
+        employee.setEmail(request.getEmail());
+        employee.setFirstName(firstName);
+        employee.setLastName(lastName);
+        employee.setPhoneNumber(request.getPhone());
+        employee.setPosition(request.getPosition());
+        employee.setDepartment(request.getDepartment());
+
+        userRepository.save(employee);
+
+        return ApiResponse.builder()
+                .success(true)
+                .message("Employee updated successfully")
+                .data(convertToUserResponse(employee))
+                .build();
+    }
+
+    @Transactional
+    public ApiResponse deleteEmployee(Long id) {
+        User employee = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
+
+        if (employee.getRole() != Role.EMPLOYEE) {
+            throw new BadRequestException("User is not an employee");
+        }
+
+        if (employee.getRole() == Role.ADMIN) {
+            throw new BadRequestException("Cannot delete admin user");
+        }
+
+        userRepository.delete(employee);
+
+        return ApiResponse.builder()
+                .success(true)
+                .message("Employee deleted successfully")
+                .build();
+    }
+
     private UserResponse convertToUserResponse(User user) {
         return UserResponse.builder()
                 .id(user.getId())
@@ -159,6 +224,8 @@ public class AdminService {
                 .lastName(user.getLastName())
                 .phoneNumber(user.getPhoneNumber())
                 .address(user.getAddress())
+                .position(user.getPosition())
+                .department(user.getDepartment())
                 .isActive(user.getIsActive())
                 .isPasswordChanged(user.getIsPasswordChanged())
                 .createdAt(user.getCreatedAt())

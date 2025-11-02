@@ -29,7 +29,8 @@ public class EmailService {
             helper.setTo(toEmail);
             helper.setSubject("Welcome to ASMS - Set Your Password");
 
-            String verifyLink = appUrl + "/api/auth/verify-token?token=" + token;
+            // Frontend link for setting password
+            String setPasswordLink = "http://localhost:3000/set-password?token=" + token;
 
             String htmlContent = "<html><body style='font-family: Arial, sans-serif;'>" +
                     "<div style='max-width: 600px; margin: 0 auto; padding: 20px;'>" +
@@ -41,22 +42,16 @@ public class EmailService {
                     "<p><strong>Your Token:</strong> <code style='background: #e9ecef; padding: 5px;'>" + token + "</code></p>" +
                     "</div>" +
                     "<h3>How to Set Your Password:</h3>" +
-                    "<p><strong>Option 1:</strong> If you have a frontend application, click this link:</p>" +
-                    "<p><a href='" + verifyLink + "' style='display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;'>Verify Account</a></p>" +
-                    "<p><strong>Option 2:</strong> Use the API directly with this request:</p>" +
-                    "<div style='background-color: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 5px;'>" +
-                    "<p><strong>Endpoint:</strong> POST " + appUrl + "/api/auth/set-password</p>" +
-                    "<p><strong>Headers:</strong> Content-Type: application/json</p>" +
-                    "<p><strong>Body:</strong></p>" +
-                    "<pre style='background: #e9ecef; padding: 10px; border-radius: 3px;'>" +
-                    "{\n" +
-                    "  \"token\": \"" + token + "\",\n" +
-                    "  \"newPassword\": \"your_new_password\"\n" +
-                    "}" +
-                    "</pre>" +
-                    "</div>" +
+                    "<p>Click the button below to set your password:</p>" +
+                    "<p style='text-align: center; margin: 30px 0;'>" +
+                    "<a href='" + setPasswordLink + "' style='display: inline-block; padding: 12px 30px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;'>Set Your Password</a>" +
+                    "</p>" +
+                    "<p>Or copy and paste this link in your browser:</p>" +
+                    "<p style='background: #f8f9fa; padding: 10px; word-break: break-all; border-radius: 5px;'>" +
+                    "<a href='" + setPasswordLink + "' style='color: #007bff;'>" + setPasswordLink + "</a>" +
+                    "</p>" +
                     "<p style='color: #dc3545; margin-top: 20px;'><strong>Important:</strong> This link will expire in 24 hours.</p>" +
-                    "<p>After setting your password, you can login with your username and new password.</p>" +
+                    "<p>After setting your password, you can login at <a href='http://localhost:3001/signin'>http://localhost:3001/signin</a> with your username: <strong>" + username + "</strong></p>" +
                     "<p style='margin-top: 30px;'>Best regards,<br/>ASMS Team</p>" +
                     "</div>" +
                     "</body></html>";

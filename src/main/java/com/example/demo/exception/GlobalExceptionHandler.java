@@ -17,7 +17,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        ApiResponse response = ApiResponse.builder()
+        ApiResponse<Object> response = ApiResponse.builder()
                 .success(false)
                 .message(ex.getMessage())
                 .build();
@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ApiResponse> handleBadRequestException(BadRequestException ex) {
-        ApiResponse response = ApiResponse.builder()
+        ApiResponse<Object> response = ApiResponse.builder()
                 .success(false)
                 .message(ex.getMessage())
                 .build();
@@ -51,7 +51,7 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
 
-        ApiResponse response = ApiResponse.builder()
+        ApiResponse<Object> response = ApiResponse.builder()
                 .success(false)
                 .message("Validation failed")
                 .data(errors)
@@ -61,7 +61,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleGlobalException(Exception ex) {
-        ApiResponse response = ApiResponse.builder()
+        ApiResponse<Object> response = ApiResponse.builder()
                 .success(false)
                 .message("An error occurred: " + ex.getMessage())
                 .build();

@@ -48,6 +48,9 @@ public class TeamMemberService {
         // Validate age
         validateAge(teamMemberDTO.getBirthDate());
 
+        // Validate working hours
+        validateWorkingHours(teamMemberDTO.getWorkingHoursPerDay());
+
         // Check if NIC already exists
         if (teamMemberRepository.existsByNic(teamMemberDTO.getNic())) {
             throw new IllegalArgumentException("Team member with NIC " + teamMemberDTO.getNic() + " already exists");
@@ -76,6 +79,9 @@ public class TeamMemberService {
 
                     // Validate age
                     validateAge(teamMemberDTO.getBirthDate());
+
+                    // Validate working hours
+                    validateWorkingHours(teamMemberDTO.getWorkingHoursPerDay());
 
                     // Validate supervisor if provided
                     User supervisor = null;
@@ -169,9 +175,10 @@ public class TeamMemberService {
                 .collect(Collectors.toList());
     }
 
+    // UPDATED: Get team members by working hours (now using String)
     public List<TeamMemberDTO> getTeamMembersByWorkingHours(String workingHours) {
-        TeamMember.WorkingHours hours = TeamMember.WorkingHours.fromString(workingHours);
-        return teamMemberRepository.findByWorkingHoursPerDay(hours)
+        validateWorkingHours(workingHours); // Validate the input
+        return teamMemberRepository.findByWorkingHoursPerDay(workingHours)
                 .stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -199,6 +206,20 @@ public class TeamMemberService {
         }
     }
 
+    // NEW: Validate working hours
+    private void validateWorkingHours(String workingHours) {
+        if (workingHours == null || workingHours.trim().isEmpty()) {
+            throw new IllegalArgumentException("Working hours are required");
+        }
+
+        // Validate that it's one of the allowed values
+        List<String> allowedHours = List.of("4", "6", "8", "10", "12");
+        if (!allowedHours.contains(workingHours.trim())) {
+            throw new IllegalArgumentException("Working hours must be one of: 4, 6, 8, 10, 12");
+        }
+    }
+
+    // UPDATED: Convert DTO to Entity - working hours as String
     private TeamMember convertToEntity(TeamMemberDTO dto, User supervisor) {
         TeamMember entity = new TeamMember();
         entity.setFullName(dto.getFullName().trim());
@@ -209,12 +230,16 @@ public class TeamMemberService {
         entity.setCity(TeamMember.District.valueOf(dto.getCity().toUpperCase()));
         entity.setSpecialization(TeamMember.Specialization.valueOf(dto.getSpecialization().toUpperCase()));
         entity.setJoinedDate(dto.getJoinedDate());
-        entity.setWorkingHoursPerDay(TeamMember.WorkingHours.fromString(dto.getWorkingHoursPerDay()));
+
+        // Set working hours as String directly
+        entity.setWorkingHoursPerDay(dto.getWorkingHoursPerDay());
+
         entity.setTeamId(dto.getTeamId());
         entity.setSupervisor(supervisor);
         return entity;
     }
 
+    // UPDATED: Convert Entity to DTO - working hours as String
     private TeamMemberDTO convertToDTO(TeamMember entity) {
         TeamMemberDTO dto = new TeamMemberDTO();
         dto.setId(entity.getId());
@@ -227,7 +252,10 @@ public class TeamMemberService {
         dto.setCity(entity.getCity().name());
         dto.setSpecialization(entity.getSpecialization().name());
         dto.setJoinedDate(entity.getJoinedDate());
-        dto.setWorkingHoursPerDay(entity.getWorkingHoursPerDay().getHours());
+
+        // Get working hours as String directly
+        dto.setWorkingHoursPerDay(entity.getWorkingHoursPerDay());
+
         dto.setTeamId(entity.getTeamId());
         dto.setSupervisorId(entity.getSupervisorId());
         dto.setSupervisorName(entity.getSupervisorName());

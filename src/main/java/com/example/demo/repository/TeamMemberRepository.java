@@ -8,7 +8,6 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
@@ -82,12 +81,25 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
                                                @Param("city") TeamMember.District city);
 
     // === Work Schedule ===
-    List<TeamMember> findByWorkingHoursPerDay(TeamMember.WorkingHours workingHours);
+    // UPDATED: Changed from TeamMember.WorkingHours enum to String
+    List<TeamMember> findByWorkingHoursPerDay(String workingHours);
 
-    // Find team members by supervisor and working hours
+    // UPDATED: Find team members by supervisor and working hours (changed to String)
     @Query("SELECT tm FROM TeamMember tm WHERE tm.supervisor.id = :supervisorId AND tm.workingHoursPerDay = :workingHours")
     List<TeamMember> findBySupervisorIdAndWorkingHours(@Param("supervisorId") Long supervisorId,
-                                                       @Param("workingHours") TeamMember.WorkingHours workingHours);
+                                                       @Param("workingHours") String workingHours);
+
+    // NEW: Count team members by working hours
+    @Query("SELECT COUNT(tm) FROM TeamMember tm WHERE tm.workingHoursPerDay = :workingHours")
+    long countByWorkingHoursPerDay(@Param("workingHours") String workingHours);
+
+    // NEW: Find team members by working hours range (greater than or equal)
+    @Query("SELECT tm FROM TeamMember tm WHERE CAST(tm.workingHoursPerDay AS int) >= :minHours")
+    List<TeamMember> findByWorkingHoursGreaterThanEqual(@Param("minHours") int minHours);
+
+    // NEW: Find team members by working hours range (less than or equal)
+    @Query("SELECT tm FROM TeamMember tm WHERE CAST(tm.workingHoursPerDay AS int) <= :maxHours")
+    List<TeamMember> findByWorkingHoursLessThanEqual(@Param("maxHours") int maxHours);
 
     // === Date-based Queries ===
     List<TeamMember> findByJoinedDateBetween(LocalDate startDate, LocalDate endDate);
@@ -104,7 +116,8 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
             "LOWER(tm.nic) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
             "LOWER(tm.contactNo) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
             "LOWER(tm.address) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-            "LOWER(tm.teamId) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
+            "LOWER(tm.teamId) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+            "LOWER(tm.workingHoursPerDay) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
     List<TeamMember> searchTeamMembers(@Param("searchTerm") String searchTerm);
 
     // Search team members under a specific supervisor
@@ -112,7 +125,8 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
             "(LOWER(tm.fullName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
             "LOWER(tm.nic) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
             "LOWER(tm.contactNo) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-            "LOWER(tm.teamId) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
+            "LOWER(tm.teamId) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+            "LOWER(tm.workingHoursPerDay) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
     List<TeamMember> searchTeamMembersBySupervisor(@Param("supervisorId") Long supervisorId,
                                                    @Param("searchTerm") String searchTerm);
 
@@ -121,12 +135,26 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
             "(:teamId IS NULL OR tm.teamId = :teamId) AND " +
             "(:specialization IS NULL OR tm.specialization = :specialization) AND " +
             "(:city IS NULL OR tm.city = :city) AND " +
-            "(:supervisorId IS NULL OR tm.supervisor.id = :supervisorId)")
-    List<TeamMember> findByTeamIdAndSpecializationAndCityAndSupervisorId(
+            "(:supervisorId IS NULL OR tm.supervisor.id = :supervisorId) AND " +
+            "(:workingHours IS NULL OR tm.workingHoursPerDay = :workingHours)")
+    List<TeamMember> findByTeamIdAndSpecializationAndCityAndSupervisorIdAndWorkingHours(
             @Param("teamId") String teamId,
             @Param("specialization") TeamMember.Specialization specialization,
             @Param("city") TeamMember.District city,
-            @Param("supervisorId") Long supervisorId);
+            @Param("supervisorId") Long supervisorId,
+            @Param("workingHours") String workingHours);
+
+    // NEW: Combined filter without supervisor
+    @Query("SELECT tm FROM TeamMember tm WHERE " +
+            "(:teamId IS NULL OR tm.teamId = :teamId) AND " +
+            "(:specialization IS NULL OR tm.specialization = :specialization) AND " +
+            "(:city IS NULL OR tm.city = :city) AND " +
+            "(:workingHours IS NULL OR tm.workingHoursPerDay = :workingHours)")
+    List<TeamMember> findByTeamIdAndSpecializationAndCityAndWorkingHours(
+            @Param("teamId") String teamId,
+            @Param("specialization") TeamMember.Specialization specialization,
+            @Param("city") TeamMember.District city,
+            @Param("workingHours") String workingHours);
 
     // === Performance Optimized Queries ===
     // Eager loading of supervisor details
@@ -136,4 +164,21 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
     // Find all team members with supervisor details (for reporting)
     @Query("SELECT tm FROM TeamMember tm JOIN FETCH tm.supervisor WHERE tm.supervisor IS NOT NULL")
     List<TeamMember> findAllWithSupervisorDetails();
+
+    // NEW: Find team members by multiple working hours
+    @Query("SELECT tm FROM TeamMember tm WHERE tm.workingHoursPerDay IN :workingHoursList")
+    List<TeamMember> findByWorkingHoursPerDayIn(@Param("workingHoursList") List<String> workingHoursList);
+
+    // NEW: Find team members by supervisor and multiple working hours
+    @Query("SELECT tm FROM TeamMember tm WHERE tm.supervisor.id = :supervisorId AND tm.workingHoursPerDay IN :workingHoursList")
+    List<TeamMember> findBySupervisorIdAndWorkingHoursPerDayIn(@Param("supervisorId") Long supervisorId,
+                                                               @Param("workingHoursList") List<String> workingHoursList);
+
+    // NEW: Get working hours distribution
+    @Query("SELECT tm.workingHoursPerDay, COUNT(tm) FROM TeamMember tm GROUP BY tm.workingHoursPerDay ORDER BY tm.workingHoursPerDay")
+    List<Object[]> getWorkingHoursDistribution();
+
+    // NEW: Get working hours distribution by team
+    @Query("SELECT tm.workingHoursPerDay, COUNT(tm) FROM TeamMember tm WHERE tm.teamId = :teamId GROUP BY tm.workingHoursPerDay ORDER BY tm.workingHoursPerDay")
+    List<Object[]> getWorkingHoursDistributionByTeam(@Param("teamId") String teamId);
 }

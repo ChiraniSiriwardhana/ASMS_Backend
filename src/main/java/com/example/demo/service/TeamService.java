@@ -35,9 +35,12 @@ public class TeamService {
 
     @Transactional
     public TeamResponseDTO createTeam(TeamRequestDTO teamRequest) {
-        // Validate employee exists
-        User employee = userRepository.findById(teamRequest.getEmployeeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + teamRequest.getEmployeeId()));
+        // Validate employee exists if provided
+        User employee = null;
+        if (teamRequest.getEmployeeId() != null) {
+            employee = userRepository.findById(teamRequest.getEmployeeId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + teamRequest.getEmployeeId()));
+        }
 
         // Check if team name already exists
         if (teamRepository.existsByName(teamRequest.getName())) {
@@ -62,9 +65,12 @@ public class TeamService {
         Team team = teamRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found with id: " + id));
 
-        // Validate employee exists
-        User employee = userRepository.findById(teamRequest.getEmployeeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + teamRequest.getEmployeeId()));
+        // Validate employee exists if provided
+        User employee = null;
+        if (teamRequest.getEmployeeId() != null) {
+            employee = userRepository.findById(teamRequest.getEmployeeId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + teamRequest.getEmployeeId()));
+        }
 
         // Check if team name already exists (excluding current team)
         if (teamRepository.existsByName(teamRequest.getName()) &&
@@ -110,7 +116,7 @@ public class TeamService {
     }
 
     private TeamResponseDTO convertToDTO(Team team) {
-        return TeamResponseDTO.builder()
+        TeamResponseDTO.TeamResponseDTOBuilder builder = TeamResponseDTO.builder()
                 .id(team.getId())
                 .name(team.getName())
                 .specialization(team.getSpecialization())
@@ -118,10 +124,53 @@ public class TeamService {
                 .totalWorkingHours(team.getTotalWorkingHours())
                 .averageAge(team.getAverageAge())
                 .description(team.getDescription())
-                .employeeId(team.getEmployee().getId())
-                .employeeName(team.getEmployee().getFirstName() + " " + team.getEmployee().getLastName())
                 .createdAt(team.getCreatedAt())
-                .updatedAt(team.getUpdatedAt())
-                .build();
+                .updatedAt(team.getUpdatedAt());
+
+        // Safely handle nullable employee
+        if (team.getEmployee() != null) {
+            builder.employeeId(team.getEmployee().getId());
+
+            // Build employee name safely
+            String employeeName = buildEmployeeName(team.getEmployee());
+            builder.employeeName(employeeName);
+        } else {
+            builder.employeeId(null)
+                    .employeeName("No supervisor assigned");
+        }
+
+        return builder.build();
+    }
+
+    private String buildEmployeeName(User employee) {
+        if (employee == null) {
+            return "No supervisor";
+        }
+
+        StringBuilder nameBuilder = new StringBuilder();
+
+        if (employee.getFirstName() != null && !employee.getFirstName().trim().isEmpty()) {
+            nameBuilder.append(employee.getFirstName().trim());
+        }
+
+        if (employee.getLastName() != null && !employee.getLastName().trim().isEmpty()) {
+            if (nameBuilder.length() > 0) {
+                nameBuilder.append(" ");
+            }
+            nameBuilder.append(employee.getLastName().trim());
+        }
+
+        // If both first and last name are null/empty, use username or email
+        if (nameBuilder.length() == 0) {
+            if (employee.getUsername() != null && !employee.getUsername().trim().isEmpty()) {
+                nameBuilder.append(employee.getUsername().trim());
+            } else if (employee.getEmail() != null && !employee.getEmail().trim().isEmpty()) {
+                nameBuilder.append(employee.getEmail().trim());
+            } else {
+                nameBuilder.append("Unknown Employee");
+            }
+        }
+
+        return nameBuilder.toString();
     }
 }

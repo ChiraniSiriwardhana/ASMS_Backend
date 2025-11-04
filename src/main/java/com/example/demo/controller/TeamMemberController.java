@@ -4,9 +4,11 @@ import com.example.demo.dto.ApiResponse;
 import com.example.demo.dto.TeamMemberDTO;
 import com.example.demo.service.TeamMemberService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
@@ -16,8 +18,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/employee/")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api/employee")
+@RequiredArgsConstructor
+@PreAuthorize("hasRole('EMPLOYEE')")
 public class TeamMemberController {
 
     @Autowired
@@ -177,7 +180,7 @@ public class TeamMemberController {
         }
     }
 
-    @PostMapping("/create")
+    @PostMapping("/member-create")
     public ResponseEntity<ApiResponse<TeamMemberDTO>> createTeamMember(
             @Valid @RequestBody TeamMemberDTO teamMemberDTO,
             BindingResult bindingResult) {

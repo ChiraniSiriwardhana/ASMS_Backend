@@ -32,7 +32,7 @@ public class Team {
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "employee_id")
+    @JoinColumn(name = "supervisor_id")
     private User employee;
 
     @Column(name = "created_at")
@@ -51,6 +51,7 @@ public class Team {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
 
     public enum Specialization {
         ENGINE,

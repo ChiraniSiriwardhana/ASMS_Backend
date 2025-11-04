@@ -2,13 +2,17 @@ package com.example.demo.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
+import lombok.Getter;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+@Getter
 @Entity
 @Table(name = "team_members")
 public class TeamMember {
 
+    // Getters and Setters
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -54,9 +58,8 @@ public class TeamMember {
     @Column(name = "joined_date", nullable = false)
     private LocalDate joinedDate;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "working_hours_per_day", nullable = false, length = 2)
-    private WorkingHours workingHoursPerDay;
+    private String workingHoursPerDay; // Store "4", "6", "8", etc.
 
     @Column(name = "team_id", nullable = false, length = 50)
     private String teamId;
@@ -104,97 +107,42 @@ public class TeamMember {
         BODYWORK, INTERIOR, DIAGNOSTICS
     }
 
-    public enum WorkingHours {
-        FOUR("4"), SIX("6"), EIGHT("8"), TEN("10"), TWELVE("12");
-
-        private final String hours;
-
-        WorkingHours(String hours) {
-            this.hours = hours;
-        }
-
-        public String getHours() {
-            return hours;
-        }
-
-        public static WorkingHours fromString(String hours) {
-            for (WorkingHours wh : WorkingHours.values()) {
-                if (wh.hours.equals(hours)) {
-                    return wh;
-                }
-            }
-            throw new IllegalArgumentException("Invalid working hours: " + hours);
-        }
-    }
-
+//
     // Constructors
     public TeamMember() {}
 
-    public TeamMember(String fullName, String nic, String contactNo, LocalDate birthDate,
-                      String address, District city, Specialization specialization,
-                      LocalDate joinedDate, WorkingHours workingHoursPerDay,
-                      String teamId, User supervisor) {
-        this.fullName = fullName;
-        this.nic = nic;
-        this.contactNo = contactNo;
-        this.birthDate = birthDate;
-        this.address = address;
-        this.city = city;
-        this.specialization = specialization;
-        this.joinedDate = joinedDate;
-        this.workingHoursPerDay = workingHoursPerDay;
-        this.teamId = teamId;
-        this.supervisor = supervisor;
-        calculateAge();
-    }
 
-    // Getters and Setters
-    public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
 
-    public String getNic() { return nic; }
     public void setNic(String nic) { this.nic = nic; }
 
-    public String getContactNo() { return contactNo; }
     public void setContactNo(String contactNo) { this.contactNo = contactNo; }
 
-    public LocalDate getBirthDate() { return birthDate; }
     public void setBirthDate(LocalDate birthDate) {
         this.birthDate = birthDate;
         calculateAge();
     }
 
-    public Integer getAge() { return age; }
     public void setAge(Integer age) { this.age = age; }
 
-    public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
 
-    public District getCity() { return city; }
     public void setCity(District city) { this.city = city; }
 
-    public Specialization getSpecialization() { return specialization; }
     public void setSpecialization(Specialization specialization) { this.specialization = specialization; }
 
-    public LocalDate getJoinedDate() { return joinedDate; }
     public void setJoinedDate(LocalDate joinedDate) { this.joinedDate = joinedDate; }
 
-    public WorkingHours getWorkingHoursPerDay() { return workingHoursPerDay; }
-    public void setWorkingHoursPerDay(WorkingHours workingHoursPerDay) { this.workingHoursPerDay = workingHoursPerDay; }
+    public void setWorkingHoursPerDay(String workingHoursPerDay) { this.workingHoursPerDay = workingHoursPerDay; }
 
-    public String getTeamId() { return teamId; }
     public void setTeamId(String teamId) { this.teamId = teamId; }
 
-    public User getSupervisor() { return supervisor; }
     public void setSupervisor(User supervisor) { this.supervisor = supervisor; }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
     // Utility methods

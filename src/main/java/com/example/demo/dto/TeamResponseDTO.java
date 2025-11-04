@@ -15,8 +15,8 @@ public class TeamResponseDTO {
     private Integer totalWorkingHours;
     private Integer averageAge;
     private String description;
-    private Long employeeId;
-    private String employeeName;
+    private Long employeeId;  // Can be null
+    private String employeeName;  // Can be "No supervisor assigned"
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -2,12 +2,14 @@ package com.example.demo.service;
 
 import com.example.demo.dto.ApiResponse;
 import com.example.demo.dto.EmployeeRequest;
+import com.example.demo.dto.ProfileUpdateRequest;
 import com.example.demo.dto.UserResponse;
 import com.example.demo.exception.BadRequestException;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.model.Role;
 import com.example.demo.model.User;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ public class AdminService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Transactional
     public ApiResponse addEmployee(EmployeeRequest request) {
@@ -214,6 +217,55 @@ public class AdminService {
                 .build();
     }
 
+    @Transactional
+    public UserResponse updateAdminProfile(ProfileUpdateRequest request, String token) {
+        // Extract username from token
+        String bearerToken = token.replace("Bearer ", "");
+        String username = jwtTokenProvider.getUsernameFromToken(bearerToken);
+        
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // Check if email is being changed and already exists
+        if (!user.getEmail().equals(request.getEmail()) && 
+            userRepository.existsByEmail(request.getEmail())) {
+            throw new BadRequestException("Email already exists");
+        }
+
+        // Check if username is being changed and already exists
+        if (!user.getUsername().equals(request.getUsername()) && 
+            userRepository.existsByUsername(request.getUsername())) {
+            throw new BadRequestException("Username already exists");
+        }
+
+        // Update basic profile information
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setPhoneNumber(request.getPhone());
+        user.setProfileImage(request.getProfileImage());
+
+        // Handle password change if provided
+        if (request.getNewPassword() != null && !request.getNewPassword().isEmpty()) {
+            if (request.getCurrentPassword() == null || request.getCurrentPassword().isEmpty()) {
+                throw new BadRequestException("Current password is required to change password");
+            }
+
+            // Verify current password
+            if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+                throw new BadRequestException("Current password is incorrect");
+            }
+
+            // Update password
+            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        }
+
+        userRepository.save(user);
+
+        return convertToUserResponse(user);
+    }
+
     private UserResponse convertToUserResponse(User user) {
         return UserResponse.builder()
                 .id(user.getId())
@@ -226,10 +278,10 @@ public class AdminService {
                 .address(user.getAddress())
                 .position(user.getPosition())
                 .department(user.getDepartment())
+                .profileImage(user.getProfileImage())
                 .isActive(user.getIsActive())
                 .isPasswordChanged(user.getIsPasswordChanged())
                 .createdAt(user.getCreatedAt())
                 .build();
     }
 }
-

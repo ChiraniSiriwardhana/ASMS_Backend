@@ -22,8 +22,8 @@ public class UserResponse {
     private String address;
     private String position;
     private String department;
+    private String profileImage;
     private Boolean isActive;
     private Boolean isPasswordChanged;
     private LocalDateTime createdAt;
 }
-

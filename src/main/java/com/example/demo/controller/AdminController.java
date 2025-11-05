@@ -120,5 +120,12 @@ public class AdminController {
         ApiResponse response = serviceManagementService.deleteService(id);
         return ResponseEntity.ok(response);
     }
-}
 
+    // Profile Management
+    @PutMapping("/profile/update")
+    public ResponseEntity<UserResponse> updateAdminProfile(@Valid @RequestBody com.example.demo.dto.ProfileUpdateRequest request,
+                                                           @RequestHeader("Authorization") String token) {
+        UserResponse response = adminService.updateAdminProfile(request, token);
+        return ResponseEntity.ok(response);
+    }
+}

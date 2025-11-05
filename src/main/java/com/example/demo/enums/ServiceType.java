@@ -1,0 +1,13 @@
+package com.example.demo.enums;
+
+public enum ServiceType {
+    REGULAR_MAINTENANCE,
+    OIL_CHANGE,
+    BRAKE_SERVICE,
+    TIRE_REPLACEMENT,
+    ENGINE_REPAIR,
+    ELECTRICAL_SYSTEM,
+    BODY_WORK,
+    CUSTOM_MODIFICATION,
+    EMERGENCY_REPAIR
+}

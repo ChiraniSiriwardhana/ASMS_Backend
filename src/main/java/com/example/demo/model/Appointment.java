@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class Appointment {
-
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -53,7 +53,7 @@ public class Appointment {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private AppointmentStatus status;  // Status of the appointment (Pending, In Progress, Completed)
+    private AppointmentStatus status;  // Status of the appointment (Pending, Confirmed, In Progress, Completed)
 
     // Many appointments can belong to one user (CUSTOMER)
     @ManyToOne

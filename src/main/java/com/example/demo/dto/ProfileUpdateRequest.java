@@ -22,7 +22,9 @@ public class ProfileUpdateRequest {
     
     private String lastName;
     
-    private String phone;
+    private String phoneNumber;
+    
+    private String address;
     
     private String profileImage;
     

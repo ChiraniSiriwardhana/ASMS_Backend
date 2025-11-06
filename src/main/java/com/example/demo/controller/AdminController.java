@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.ApiResponse;
+import com.example.demo.dto.AssignedServiceDTO;
 import com.example.demo.dto.EmployeeRequest;
 import com.example.demo.dto.ServiceRequest;
 import com.example.demo.dto.ServiceResponse;
@@ -9,11 +10,13 @@ import com.example.demo.dto.AppointmentAdminResponse;
 import com.example.demo.model.Appointment;
 import com.example.demo.service.AdminService;
 import com.example.demo.service.AppointmentService;
+import com.example.demo.service.EmployeeServiceService;
 import com.example.demo.service.ServiceManagementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,6 +30,7 @@ public class AdminController {
     private final AdminService adminService;
     private final ServiceManagementService serviceManagementService;
     private final AppointmentService appointmentService;
+    private final EmployeeServiceService employeeServiceService;
 
     @PostMapping("/employees")
     public ResponseEntity<ApiResponse> addEmployee(@Valid @RequestBody EmployeeRequest request) {
@@ -158,5 +162,36 @@ public class AdminController {
             @PathVariable Long employeeId) {
         Appointment appointment = appointmentService.assignEmployeeToAppointment(id, employeeId);
         return ResponseEntity.ok(appointment);
+    }
+
+    // Employee Service Assignment Endpoints
+
+    // Assign service to employee
+    @PostMapping("/employees/{employeeId}/assign-service/{serviceId}")
+    public ResponseEntity<ApiResponse> assignServiceToEmployee(
+            @PathVariable Long employeeId,
+            @PathVariable Long serviceId,
+            Authentication authentication
+    ) {
+        String adminUsername = authentication.getName();
+        employeeServiceService.assignServiceToEmployee(employeeId, serviceId, adminUsername);
+        return ResponseEntity.ok(ApiResponse.success("Service assigned to employee successfully"));
+    }
+
+    // Remove service from employee
+    @DeleteMapping("/employees/{employeeId}/remove-service/{serviceId}")
+    public ResponseEntity<ApiResponse> removeServiceFromEmployee(
+            @PathVariable Long employeeId,
+            @PathVariable Long serviceId
+    ) {
+        employeeServiceService.removeServiceFromEmployee(employeeId, serviceId);
+        return ResponseEntity.ok(ApiResponse.success("Service removed from employee successfully"));
+    }
+
+    // Get all services assigned to a specific employee
+    @GetMapping("/employees/{employeeId}/services")
+    public ResponseEntity<List<AssignedServiceDTO>> getEmployeeServices(@PathVariable Long employeeId) {
+        List<AssignedServiceDTO> services = employeeServiceService.getServicesForEmployee(employeeId);
+        return ResponseEntity.ok(services);
     }
 }

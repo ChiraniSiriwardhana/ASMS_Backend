@@ -14,6 +14,18 @@ import java.time.LocalDateTime;
 @Builder
 public class AppointmentDTO {
 
+    // For employee dashboard
+    private Long id;
+    private Long customerId;
+    private String customerName;
+    private Long serviceId;
+    private String serviceName;
+    private Long employeeId;
+    private String employeeName;
+    private String status;
+    private String notes;
+
+    // Original fields for customer appointment creation
     private String vehicleType;
     private String vehicleBrand;
     private String model;

@@ -11,4 +11,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     // Custom method to find appointments by user (CUSTOMER)
     List<Appointment> findByUser(Optional<User> user);
+
+    // Find appointments assigned to a specific employee
+    List<Appointment> findByAssignedEmployeeId(Long employeeId);
 }

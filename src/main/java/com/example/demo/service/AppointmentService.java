@@ -182,4 +182,30 @@ public class AppointmentService {
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointmentRepository.save(appointment);
     }
+
+    // Employee: Get appointments assigned to employee
+    public List<AppointmentDTO> getAppointmentsByEmployee(Long employeeId) {
+        List<Appointment> appointments = appointmentRepository.findByAssignedEmployeeId(employeeId);
+
+        return appointments.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // Convert Appointment to AppointmentDTO
+    private AppointmentDTO convertToDTO(Appointment appointment) {
+        User customer = appointment.getUser();
+
+        return AppointmentDTO.builder()
+                .id(appointment.getId())
+                .customerId(customer.getId())
+                .customerName(customer.getFirstName() + " " + customer.getLastName())
+                .serviceId(null) // If you have service ID in appointment
+                .serviceName(appointment.getServiceType())
+                .employeeId(appointment.getAssignedEmployeeId())
+                .appointmentDate(appointment.getAppointmentDate())
+                .status(appointment.getStatus().name())
+                .notes(appointment.getAdditionalRequirements())
+                .build();
+    }
 }

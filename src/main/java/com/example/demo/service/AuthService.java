@@ -182,5 +182,52 @@ public class AuthService {
                 .message("Password changed successfully")
                 .build();
     }
+
+    @Transactional
+    public ApiResponse forgotPassword(ForgotPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("No account found with this email address"));
+
+        // Generate reset token
+        String resetToken = UUID.randomUUID().toString();
+        user.setResetToken(resetToken);
+        user.setResetTokenExpiry(LocalDateTime.now().plusHours(24)); // Token valid for 24 hours
+
+        userRepository.save(user);
+
+        // Send password reset email
+        emailService.sendPasswordResetEmail(user.getEmail(), user.getUsername(), resetToken);
+
+        return ApiResponse.builder()
+                .success(true)
+                .message("Password reset link has been sent to your email address")
+                .build();
+    }
+
+    @Transactional
+    public ApiResponse resetPassword(ResetPasswordRequest request) {
+        User user = userRepository.findByResetToken(request.getToken())
+                .orElseThrow(() -> new BadRequestException("Invalid or expired reset token"));
+
+        if (user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("Reset token has expired. Please request a new password reset link.");
+        }
+
+        // Update password
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setIsPasswordChanged(true);
+        user.setResetToken(null);
+        user.setResetTokenExpiry(null);
+
+        userRepository.save(user);
+
+        // Send confirmation email
+        emailService.sendPasswordResetSuccessEmail(user.getEmail(), user.getUsername());
+
+        return ApiResponse.builder()
+                .success(true)
+                .message("Password has been reset successfully. You can now login with your new password.")
+                .build();
+    }
 }
 

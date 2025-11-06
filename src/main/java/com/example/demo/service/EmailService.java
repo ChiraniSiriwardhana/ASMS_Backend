@@ -92,6 +92,81 @@ public class EmailService {
             e.printStackTrace();
         }
     }
+
+    public void sendPasswordResetEmail(String toEmail, String username, String resetToken) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject("ASMS - Password Reset Request");
+
+            // Frontend link for resetting password
+            String resetPasswordLink = "http://localhost:3000/reset-password?token=" + resetToken;
+
+            String htmlContent = "<html><body style='font-family: Arial, sans-serif;'>" +
+                    "<div style='max-width: 600px; margin: 0 auto; padding: 20px;'>" +
+                    "<h2 style='color: #333;'>Password Reset Request</h2>" +
+                    "<p>Dear " + username + ",</p>" +
+                    "<p>We received a request to reset your password for your ASMS account.</p>" +
+                    "<p>Click the button below to reset your password:</p>" +
+                    "<p style='text-align: center; margin: 30px 0;'>" +
+                    "<a href='" + resetPasswordLink + "' style='display: inline-block; padding: 12px 30px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;'>Reset Password</a>" +
+                    "</p>" +
+                    "<p>Or copy and paste this link in your browser:</p>" +
+                    "<p style='background: #f8f9fa; padding: 10px; word-break: break-all; border-radius: 5px;'>" +
+                    "<a href='" + resetPasswordLink + "' style='color: #007bff;'>" + resetPasswordLink + "</a>" +
+                    "</p>" +
+                    "<p style='color: #dc3545; margin-top: 20px;'><strong>Important:</strong> This link will expire in 24 hours.</p>" +
+                    "<p style='color: #6c757d;'>If you didn't request a password reset, please ignore this email or contact support if you have concerns.</p>" +
+                    "<p style='margin-top: 30px;'>Best regards,<br/>ASMS Team</p>" +
+                    "</div>" +
+                    "</body></html>";
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+
+            System.out.println("Password reset email sent successfully to: " + toEmail);
+        } catch (MessagingException e) {
+            System.err.println("Failed to send password reset email to: " + toEmail);
+            e.printStackTrace();
+            throw new RuntimeException("Failed to send password reset email: " + e.getMessage());
+        }
+    }
+
+    public void sendPasswordResetSuccessEmail(String toEmail, String username) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject("ASMS - Password Reset Successful");
+
+            String htmlContent = "<html><body style='font-family: Arial, sans-serif;'>" +
+                    "<div style='max-width: 600px; margin: 0 auto; padding: 20px;'>" +
+                    "<h2 style='color: #28a745;'>Password Reset Successful</h2>" +
+                    "<p>Dear " + username + ",</p>" +
+                    "<p>Your password has been reset successfully.</p>" +
+                    "<p>You can now sign in to your ASMS account with your new password.</p>" +
+                    "<p style='text-align: center; margin: 30px 0;'>" +
+                    "<a href='http://localhost:3000/signin' style='display: inline-block; padding: 12px 30px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;'>Go to Sign In</a>" +
+                    "</p>" +
+                    "<p style='color: #dc3545;'><strong>Security Notice:</strong> If you didn't make this change, please contact support immediately.</p>" +
+                    "<p style='margin-top: 30px;'>Best regards,<br/>ASMS Team</p>" +
+                    "</div>" +
+                    "</body></html>";
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+
+            System.out.println("Password reset success email sent to: " + toEmail);
+        } catch (MessagingException e) {
+            System.err.println("Failed to send password reset success email to: " + toEmail);
+            e.printStackTrace();
+        }
+    }
 }
 
 

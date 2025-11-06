@@ -5,7 +5,10 @@ import com.example.demo.dto.EmployeeRequest;
 import com.example.demo.dto.ServiceRequest;
 import com.example.demo.dto.ServiceResponse;
 import com.example.demo.dto.UserResponse;
+import com.example.demo.dto.AppointmentAdminResponse;
+import com.example.demo.model.Appointment;
 import com.example.demo.service.AdminService;
+import com.example.demo.service.AppointmentService;
 import com.example.demo.service.ServiceManagementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,7 @@ public class AdminController {
 
     private final AdminService adminService;
     private final ServiceManagementService serviceManagementService;
+    private final AppointmentService appointmentService;
 
     @PostMapping("/employees")
     public ResponseEntity<ApiResponse> addEmployee(@Valid @RequestBody EmployeeRequest request) {
@@ -127,5 +131,32 @@ public class AdminController {
                                                            @RequestHeader("Authorization") String token) {
         UserResponse response = adminService.updateAdminProfile(request, token);
         return ResponseEntity.ok(response);
+    }
+
+    // Appointment Management
+    @GetMapping("/appointments")
+    public ResponseEntity<List<AppointmentAdminResponse>> getAllAppointments() {
+        List<AppointmentAdminResponse> appointments = appointmentService.getAllAppointmentsWithCustomerDetails();
+        return ResponseEntity.ok(appointments);
+    }
+
+    @PutMapping("/appointments/{id}/approve")
+    public ResponseEntity<Appointment> approveAppointment(@PathVariable Long id) {
+        Appointment appointment = appointmentService.approveAppointment(id);
+        return ResponseEntity.ok(appointment);
+    }
+
+    @PutMapping("/appointments/{id}/reject")
+    public ResponseEntity<Appointment> rejectAppointment(@PathVariable Long id) {
+        Appointment appointment = appointmentService.rejectAppointment(id);
+        return ResponseEntity.ok(appointment);
+    }
+
+    @PutMapping("/appointments/{id}/assign/{employeeId}")
+    public ResponseEntity<Appointment> assignEmployeeToAppointment(
+            @PathVariable Long id,
+            @PathVariable Long employeeId) {
+        Appointment appointment = appointmentService.assignEmployeeToAppointment(id, employeeId);
+        return ResponseEntity.ok(appointment);
     }
 }

@@ -60,6 +60,10 @@ public class Appointment {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    // Employee assigned to this appointment
+    @Column(name = "assigned_employee_id")
+    private Long assignedEmployeeId;
+
     // Timestamps for appointment creation and updates
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

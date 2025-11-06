@@ -243,7 +243,8 @@ public class AdminService {
         user.setEmail(request.getEmail());
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
-        user.setPhoneNumber(request.getPhone());
+        user.setPhoneNumber(request.getPhoneNumber());
+        user.setAddress(request.getAddress());
         user.setProfileImage(request.getProfileImage());
 
         // Handle password change if provided

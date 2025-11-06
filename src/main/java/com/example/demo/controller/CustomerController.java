@@ -1,11 +1,13 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.ProfileUpdateRequest;
 import com.example.demo.dto.UserResponse;
 import com.example.demo.model.Appointment;
 import com.example.demo.dto.ApiResponse;
 import com.example.demo.dto.AppointmentDTO;
 import com.example.demo.service.AppointmentService;
 import com.example.demo.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,6 +30,16 @@ public class CustomerController {
         String username = authentication.getName();
         UserResponse user = userService.getCurrentUserProfile(username);
         return ResponseEntity.ok(user);
+    }
+
+    @PutMapping("/profile/update")
+    public ResponseEntity<UserResponse> updateProfile(
+            @Valid @RequestBody ProfileUpdateRequest request,
+            Authentication authentication
+    ) {
+        String username = authentication.getName();
+        UserResponse updatedUser = userService.updateProfile(username, request);
+        return ResponseEntity.ok(updatedUser);
     }
 
     @GetMapping("/dashboard")

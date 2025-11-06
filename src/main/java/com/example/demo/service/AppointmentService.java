@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-
+    
 import java.util.List;
 import java.util.Optional;
 
@@ -64,4 +64,28 @@ public class AppointmentService {
 
         return appointment.getStatus().name();  // Return the status as a string
     }
+
+    // Cancel an appointment
+     public void cancelAppointment(Long appointmentId, String username) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
+
+        // Ensure only the owner can cancel their appointment
+        if (!appointment.getUser().getUsername().equals(username)) {
+            throw new IllegalArgumentException("You are not authorized to cancel this appointment");
+        }
+
+        // Prevent cancelling if already cancelled or completed
+        if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+            throw new IllegalStateException("Appointment is already cancelled");
+        }
+        if (appointment.getStatus() == AppointmentStatus.COMPLETED) {
+            throw new IllegalStateException("Completed appointments cannot be cancelled");
+        }
+
+        // Update status
+        appointment.setStatus(AppointmentStatus.CANCELLED);
+        appointmentRepository.save(appointment);
+    }
+    
 }

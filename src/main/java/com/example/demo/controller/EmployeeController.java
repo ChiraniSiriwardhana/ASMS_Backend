@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dto.AssignedServiceDTO;
 import com.example.demo.dto.AppointmentDTO;
 import com.example.demo.dto.UserResponse;
+import com.example.demo.service.EmployeeService;
 import com.example.demo.service.EmployeeServiceService;
 import com.example.demo.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -21,11 +22,21 @@ public class EmployeeController {
 
     private final UserService userService;
     private final EmployeeServiceService employeeServiceService;
+    private final EmployeeService employeeService;
 
     @GetMapping("/profile")
     public ResponseEntity<UserResponse> getProfile(Authentication authentication) {
         String username = authentication.getName();
         UserResponse user = userService.getCurrentUserProfile(username);
+        return ResponseEntity.ok(user);
+    }
+
+
+    // Get current logged-in employee details using EmployeeService
+    @GetMapping("/current")
+    public ResponseEntity<UserResponse> getCurrentEmployee(Authentication authentication) {
+        String username = authentication.getName();
+        UserResponse user = employeeService.getUserByUsername(username);
         return ResponseEntity.ok(user);
     }
 

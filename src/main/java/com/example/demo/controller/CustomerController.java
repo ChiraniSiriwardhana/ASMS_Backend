@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.UserResponse;
 import com.example.demo.model.Appointment;
+import com.example.demo.dto.ApiResponse;
 import com.example.demo.dto.AppointmentDTO;
 import com.example.demo.service.AppointmentService;
 import com.example.demo.service.UserService;
@@ -56,6 +57,17 @@ public class CustomerController {
     public ResponseEntity<String> getAppointmentStatus(@PathVariable Long appointmentId) {
         String status = appointmentService.getAppointmentStatus(appointmentId);
         return ResponseEntity.ok(status);
+    }
+
+    //Cancel an appointment
+    @PutMapping("/appointments/{appointmentId}/cancel")
+    public ResponseEntity<ApiResponse> cancelAppointment(
+            @PathVariable Long appointmentId,
+            Authentication authentication
+    ) {
+        String username = authentication.getName();
+        appointmentService.cancelAppointment(appointmentId, username);
+        return ResponseEntity.ok(ApiResponse.success("Appointment cancelled successfully"));
     }
 }
 

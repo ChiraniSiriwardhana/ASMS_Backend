@@ -75,10 +75,11 @@ public class AuthService {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        String token = jwtTokenProvider.generateToken(authentication);
+        String token = jwtTokenProvider.generateToken(authentication, user.getId());
 
         return LoginResponse.builder()
                 .token(token)
+                .userId(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .role(user.getRole().name())

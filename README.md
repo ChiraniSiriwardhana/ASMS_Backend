@@ -26,12 +26,21 @@ A comprehensive REST API backend for managing an automobile service system with 
 
 - **JWT Authentication** - Secure token-based authentication
 - **Role-Based Access Control** - Three user roles (Admin, Customer, Employee)
+- **🔔 Real-Time Notifications** - WebSocket-based live notifications (NEW!)
 - **Email Notifications** - Automated email for employee activation
 - **Password Management** - Reset, change, and secure password storage with BCrypt
 - **RESTful API** - Clean and well-documented endpoints
 - **Exception Handling** - Global error handling with meaningful responses
 - **Input Validation** - Bean validation on all inputs
 - **PostgreSQL Database** - Reliable data persistence
+
+### 🆕 Live Notification System
+- **WebSocket Support** - Real-time notifications without page refresh
+- **User-Specific Notifications** - Personalized notification delivery
+- **Appointment Updates** - Instant alerts for appointment status changes
+- **Admin Broadcasts** - System-wide notifications for administrators
+- **Notification History** - REST API for fetching historical notifications
+- **Read/Unread Tracking** - Mark notifications as read, get unread count
 
 ## 🛠️ Tech Stack
 
@@ -41,6 +50,7 @@ A comprehensive REST API backend for managing an automobile service system with 
 | Spring Boot | 3.5.6 | Application Framework |
 | Spring Security | 3.x | Security & Authentication |
 | Spring Data JPA | 3.x | Data Access Layer |
+| **Spring WebSocket** | **3.x** | **Real-Time Notifications (NEW!)** |
 | PostgreSQL | Latest | Database |
 | JWT (jjwt) | 0.11.5 | Token Generation |
 | Lombok | Latest | Boilerplate Reduction |
@@ -329,6 +339,143 @@ GET /api/customer/dashboard
 Authorization: Bearer {customer-token}
 ```
 
+### 🔔 Notification Endpoints (NEW!)
+
+> **Note:** All notification endpoints require `Authorization: Bearer {token}` header
+
+#### 1. Get All Notifications
+```http
+GET /api/notifications
+Authorization: Bearer {token}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Notifications retrieved successfully",
+  "data": [
+    {
+      "id": 1,
+      "title": "Appointment Created",
+      "message": "Your appointment for Toyota Camry has been created",
+      "type": "APPOINTMENT_CREATED",
+      "recipientId": 5,
+      "appointmentId": 10,
+      "isRead": false,
+      "createdAt": "2025-11-07T14:30:00",
+      "readAt": null
+    }
+  ]
+}
+```
+
+#### 2. Get Unread Notifications
+```http
+GET /api/notifications/unread
+Authorization: Bearer {token}
+```
+
+#### 3. Get Unread Count
+```http
+GET /api/notifications/unread/count
+Authorization: Bearer {token}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Unread count retrieved successfully",
+  "data": 5
+}
+```
+
+#### 4. Mark Notification as Read
+```http
+PUT /api/notifications/{notificationId}/read
+Authorization: Bearer {token}
+```
+
+#### 5. Mark All Notifications as Read
+```http
+PUT /api/notifications/read-all
+Authorization: Bearer {token}
+```
+
+#### 6. Delete Notification
+```http
+DELETE /api/notifications/{notificationId}
+Authorization: Bearer {token}
+```
+
+### 📡 WebSocket Connection (Real-Time Notifications)
+
+#### Connect to WebSocket
+```javascript
+// WebSocket URL
+ws://localhost:8080/ws/notifications?token={jwt-token}
+
+// Subscribe to user-specific topic
+/topic/notifications/user.{userId}
+
+// Admins also subscribe to
+/topic/notifications/admin
+```
+
+#### Frontend Integration
+See detailed integration guides:
+- **📘 Complete Guide:** [WEBSOCKET_NOTIFICATION_GUIDE.md](WEBSOCKET_NOTIFICATION_GUIDE.md)
+- **⚡ Quick Start:** [QUICK_START_NOTIFICATIONS.md](QUICK_START_NOTIFICATIONS.md)
+- **🧪 Test Tool:** Open `websocket-test.html` in browser
+
+#### Notification Types
+- `APPOINTMENT_CREATED` - Customer creates appointment
+- `APPOINTMENT_CONFIRMED` - Admin confirms appointment
+- `APPOINTMENT_CANCELLED` - Appointment cancelled
+- `EMPLOYEE_ASSIGNED` - Employee assigned to appointment
+- `STATUS_CHANGED_IN_SERVICE` - Status changed to IN_SERVICE
+- `STATUS_CHANGED_READY` - Status changed to READY
+- `STATUS_CHANGED_COMPLETED` - Status changed to COMPLETED
+- `GENERAL` - General notification
+
+#### WebSocket Message Format
+```json
+{
+  "notificationId": 123,
+  "title": "Appointment Confirmed",
+  "message": "Your appointment for Toyota Camry has been confirmed",
+  "type": "APPOINTMENT_CONFIRMED",
+  "appointmentId": 45,
+  "recipientId": 5,
+  "timestamp": "2025-11-07T14:30:00"
+}
+```
+
+#### Quick Integration Example
+```javascript
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
+
+const token = localStorage.getItem('authToken');
+const userId = localStorage.getItem('userId');
+
+const client = new Client({
+  webSocketFactory: () => 
+    new SockJS(`http://localhost:8080/ws/notifications?token=${token}`),
+  
+  onConnect: () => {
+    client.subscribe(`/topic/notifications/user.${userId}`, (message) => {
+      const notification = JSON.parse(message.body);
+      console.log('📬 New notification:', notification);
+      // Update your UI here
+    });
+  }
+});
+
+client.activate();
+```
+
 ## 👥 User Roles & Flow
 
 ### 🔐 Admin
@@ -523,6 +670,30 @@ server.port=8081
 - Token validity: 24 hours
 - Login again to get new token
 - Or increase `jwt.expiration` value
+
+### Issue: WebSocket Connection Failed
+```bash
+# Verify backend is running
+curl http://localhost:8080/api/notifications
+
+# Check if token is valid (not expired)
+# Token must include userId claim
+
+# Ensure correct WebSocket URL format:
+ws://localhost:8080/ws/notifications?token=YOUR_JWT_TOKEN
+```
+
+### Issue: Not Receiving Real-Time Notifications
+- ✅ Check if subscribed to correct topic: `/topic/notifications/user.{YOUR_USER_ID}`
+- ✅ Verify userId in JWT token matches your user ID
+- ✅ Ensure WebSocket connection is active (check connection status)
+- ✅ Test using `websocket-test.html` tool
+- ✅ Check browser console for errors
+
+### Issue: 500 Error on Notification Endpoints
+- Verify user is authenticated (valid JWT token)
+- Check database connection
+- Review application logs for stack traces
 
 ## 📝 API Response Format
 

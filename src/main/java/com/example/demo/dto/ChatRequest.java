@@ -6,15 +6,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class LoginResponse {
-    private String token;
-    private Long userId;
-    private String username;
-    private String email;
-    private String role;
-    private String profileImage;
+public class ChatRequest {
     private String message;
+    private String sessionId;
 }
+

@@ -57,8 +57,12 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
+
                 .requestMatchers("/ws/**").permitAll()  // Allow WebSocket endpoints
                     .requestMatchers("/api/notifications/**").permitAll()
+
+                .requestMatchers("/api/customer/services").permitAll()  // Public access for booking
+
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/employee/**").hasRole("EMPLOYEE")
                 .requestMatchers("/api/customer/**").hasRole("CUSTOMER")

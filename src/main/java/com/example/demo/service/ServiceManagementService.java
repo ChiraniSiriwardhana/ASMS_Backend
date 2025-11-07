@@ -4,11 +4,13 @@ import com.example.demo.dto.ApiResponse;
 import com.example.demo.dto.ServiceRequest;
 import com.example.demo.dto.ServiceResponse;
 import com.example.demo.exception.ResourceNotFoundException;
+import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.ServiceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 public class ServiceManagementService {
 
     private final ServiceRepository serviceRepository;
+    private final AppointmentRepository appointmentRepository;
 
     @Transactional
     public ApiResponse createService(ServiceRequest request) {
@@ -45,8 +48,9 @@ public class ServiceManagementService {
 
     @Transactional(readOnly = true)
     public List<ServiceResponse> getAllServices() {
+        LocalDate today = LocalDate.now();
         return serviceRepository.findAll().stream()
-                .map(this::mapToResponse)
+                .map(service -> mapToResponse(service, today))
                 .collect(Collectors.toList());
     }
 
@@ -54,7 +58,7 @@ public class ServiceManagementService {
     public ServiceResponse getServiceById(Long id) {
         com.example.demo.model.Service service = serviceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Service not found"));
-        return mapToResponse(service);
+        return mapToResponse(service, LocalDate.now());
     }
 
     @Transactional
@@ -151,6 +155,18 @@ public class ServiceManagementService {
     }
 
     private ServiceResponse mapToResponse(com.example.demo.model.Service service) {
+        return mapToResponse(service, LocalDate.now());
+    }
+
+    private ServiceResponse mapToResponse(com.example.demo.model.Service service, LocalDate date) {
+        // Count today's bookings for this service (excluding cancelled/rejected)
+        Long todayBookingsCount = appointmentRepository.countAppointmentsByServiceAndDate(
+                service.getServiceName(), date);
+        
+        int todayBookings = todayBookingsCount != null ? todayBookingsCount.intValue() : 0;
+        int remainingSlots = service.getMaxDailySlots() - todayBookings;
+        boolean availableToday = service.getIsActive() && remainingSlots > 0;
+        
         return ServiceResponse.builder()
                 .id(service.getId())
                 .serviceName(service.getServiceName())
@@ -167,6 +183,9 @@ public class ServiceManagementService {
                 .additionalNotes(service.getAdditionalNotes())
                 .createdAt(service.getCreatedAt())
                 .updatedAt(service.getUpdatedAt())
+                .todayBookings(todayBookings)
+                .remainingSlots(Math.max(0, remainingSlots))
+                .availableToday(availableToday)
                 .build();
     }
 }

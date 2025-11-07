@@ -20,8 +20,10 @@ public class UserResponse {
     private String lastName;
     private String phoneNumber;
     private String address;
+    private String position;
+    private String department;
+    private String profileImage;
     private Boolean isActive;
     private Boolean isPasswordChanged;
     private LocalDateTime createdAt;
 }
-

@@ -59,5 +59,11 @@ public class User {
     private String lastName;
     private String phoneNumber;
     private String address;
-}
 
+    // Additional fields for Employee
+    private String position;
+    private String department;
+
+    // Profile image URL
+    private String profileImage;
+}

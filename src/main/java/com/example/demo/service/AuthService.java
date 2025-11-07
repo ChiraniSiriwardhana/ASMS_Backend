@@ -57,21 +57,33 @@ public class AuthService {
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
+        // Find user by username, email, or phone number
+        User user = userRepository.findByUsername(request.getUsername())
+                .or(() -> userRepository.findByEmail(request.getUsername()))
+                .or(() -> userRepository.findByPhoneNumber(request.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // Check if user account is active
+        if (!user.getIsActive()) {
+            throw new BadRequestException("Account is deactivated. Please contact administrator.");
+        }
+
+        // Authenticate using the actual username from the database
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(user.getUsername(), request.getPassword())
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String token = jwtTokenProvider.generateToken(authentication);
 
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        String token = jwtTokenProvider.generateToken(authentication, user.getId());
 
         return LoginResponse.builder()
                 .token(token)
+                .userId(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .role(user.getRole().name())
+                .profileImage(user.getProfileImage())
                 .message("Login successful")
                 .build();
     }
@@ -169,6 +181,53 @@ public class AuthService {
         return ApiResponse.builder()
                 .success(true)
                 .message("Password changed successfully")
+                .build();
+    }
+
+    @Transactional
+    public ApiResponse forgotPassword(ForgotPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("No account found with this email address"));
+
+        // Generate reset token
+        String resetToken = UUID.randomUUID().toString();
+        user.setResetToken(resetToken);
+        user.setResetTokenExpiry(LocalDateTime.now().plusHours(24)); // Token valid for 24 hours
+
+        userRepository.save(user);
+
+        // Send password reset email
+        emailService.sendPasswordResetEmail(user.getEmail(), user.getUsername(), resetToken);
+
+        return ApiResponse.builder()
+                .success(true)
+                .message("Password reset link has been sent to your email address")
+                .build();
+    }
+
+    @Transactional
+    public ApiResponse resetPassword(ResetPasswordRequest request) {
+        User user = userRepository.findByResetToken(request.getToken())
+                .orElseThrow(() -> new BadRequestException("Invalid or expired reset token"));
+
+        if (user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("Reset token has expired. Please request a new password reset link.");
+        }
+
+        // Update password
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setIsPasswordChanged(true);
+        user.setResetToken(null);
+        user.setResetTokenExpiry(null);
+
+        userRepository.save(user);
+
+        // Send confirmation email
+        emailService.sendPasswordResetSuccessEmail(user.getEmail(), user.getUsername());
+
+        return ApiResponse.builder()
+                .success(true)
+                .message("Password has been reset successfully. You can now login with your new password.")
                 .build();
     }
 }

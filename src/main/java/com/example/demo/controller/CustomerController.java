@@ -1,11 +1,13 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.ProfileUpdateRequest;
+import com.example.demo.dto.ServiceResponse;
 import com.example.demo.dto.UserResponse;
 import com.example.demo.model.Appointment;
 import com.example.demo.dto.ApiResponse;
 import com.example.demo.dto.AppointmentDTO;
 import com.example.demo.service.AppointmentService;
+import com.example.demo.service.ServiceManagementService;
 import com.example.demo.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +21,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/customer")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('CUSTOMER')")
 public class CustomerController {
 
     private final UserService userService;
     private final AppointmentService appointmentService;
+    private final ServiceManagementService serviceManagementService;
 
     @GetMapping("/profile")
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<UserResponse> getProfile(Authentication authentication) {
         String username = authentication.getName();
         UserResponse user = userService.getCurrentUserProfile(username);
@@ -33,6 +36,7 @@ public class CustomerController {
     }
 
     @PutMapping("/profile/update")
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<UserResponse> updateProfile(
             @Valid @RequestBody ProfileUpdateRequest request,
             Authentication authentication
@@ -43,12 +47,21 @@ public class CustomerController {
     }
 
     @GetMapping("/dashboard")
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<String> getDashboard() {
         return ResponseEntity.ok("Welcome to Customer Dashboard");
     }
 
+    // Get all active services (public access for booking - configured in SecurityConfig)
+    @GetMapping("/services")
+    public ResponseEntity<List<ServiceResponse>> getActiveServices() {
+        List<ServiceResponse> services = serviceManagementService.getAllServices();
+        return ResponseEntity.ok(services);
+    }
+
     // Create an appointment
     @PostMapping("/appointments")
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<Appointment> createAppointment(@RequestBody AppointmentDTO appointmentDTO, Authentication authentication) {
         // Get the logged-in user from Authentication object
         String username = authentication.getName();
@@ -58,6 +71,7 @@ public class CustomerController {
 
     // Get all appointments for the logged-in customer
     @GetMapping("/appointments")
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<List<Appointment>> getCustomerAppointments(Authentication authentication) {
         String username = authentication.getName();
         List<Appointment> appointments = appointmentService.getAppointmentsByCustomer(username);
@@ -66,6 +80,7 @@ public class CustomerController {
 
     // Get appointment status for a specific appointment (optional)
     @GetMapping("/appointments/{appointmentId}/status")
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<String> getAppointmentStatus(@PathVariable Long appointmentId) {
         String status = appointmentService.getAppointmentStatus(appointmentId);
         return ResponseEntity.ok(status);
@@ -73,6 +88,7 @@ public class CustomerController {
 
     //Cancel an appointment
     @PutMapping("/appointments/{appointmentId}/cancel")
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse> cancelAppointment(
             @PathVariable Long appointmentId,
             Authentication authentication

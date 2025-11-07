@@ -29,4 +29,9 @@ public class ServiceResponse {
     private String additionalNotes;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    
+    // Availability tracking for today
+    private Integer todayBookings;  // Number of bookings for today
+    private Integer remainingSlots; // Remaining slots for today (maxDailySlots - todayBookings)
+    private Boolean availableToday; // Whether service is available for booking today
 }

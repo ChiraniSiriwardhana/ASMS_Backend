@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: asms-backend
+    ports:
+      - "8080:8080"
+    environment:
+      # Database Configuration (Using Neon PostgreSQL - Cloud hosted)
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-summer-silence-a1hz10nd-pooler.ap-southeast-1.aws.neon.tech:5432/neondb?sslmode=require
+      - SPRING_DATASOURCE_USERNAME=neondb_owner
+      - SPRING_DATASOURCE_PASSWORD=npg_urxW2kOhIPi0
+      
+      # JPA Configuration
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_SHOW_SQL=true
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+      
+      # JWT Configuration
+      - JWT_SECRET=5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437
+      - JWT_EXPIRATION=86400000
+      
+      # Email Configuration
+      - SPRING_MAIL_HOST=smtp.gmail.com
+      - SPRING_MAIL_PORT=587
+      - SPRING_MAIL_USERNAME=madhusanka2023.me@gmail.com
+      - SPRING_MAIL_PASSWORD=mptb rgyp fusm rczn
+      
+      # Admin Credentials
+      - ADMIN_USERNAME=admin@gmail.com
+      - ADMIN_PASSWORD=admin123
+      - ADMIN_EMAIL=admin@gmail.com
+      
+      # Application URL
+      - APP_URL=http://localhost:8080
+      
+      # OpenRouter Configuration
+      - OPENROUTER_API_KEY=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
+      - OPENROUTER_API_URL=https://openrouter.ai/api/v1/chat/completions
+      - OPENROUTER_MODEL=google/gemini-2.0-flash-exp:free
+      
+      # Chatbot Test Mode
+      - CHATBOT_TEST_MODE=true
+      
+    networks:
+      - asms-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+networks:
+  asms-network:
+    driver: bridge

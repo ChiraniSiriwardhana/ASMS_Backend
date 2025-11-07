@@ -5,14 +5,13 @@ import com.example.demo.dto.AppointmentDTO;
 import com.example.demo.dto.AppointmentAdminResponse;
 import com.example.demo.model.Appointment;
 import com.example.demo.model.AppointmentStatus;
+import com.example.demo.model.NotificationType;
 import com.example.demo.model.User;
 import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-    
+
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,6 +24,9 @@ public class AppointmentService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private NotificationService notificationService;
 
     // Create an appointment
     public Appointment createAppointment(AppointmentDTO appointmentDTO, String username) {
@@ -47,7 +49,28 @@ public class AppointmentService {
         appointment.setStatus(AppointmentStatus.PENDING);  // Default to Pending
         appointment.setUser(user);  // Assign the logged-in user to the appointment
 
-        return appointmentRepository.save(appointment);
+        Appointment savedAppointment = appointmentRepository.save(appointment);
+
+        // Notify customer about appointment creation
+        notificationService.notifyCustomer(
+                user.getId(),
+                savedAppointment.getId(),
+                "Appointment Created",
+                "Your appointment for " + appointmentDTO.getVehicleBrand() + " " + appointmentDTO.getModel() +
+                " has been created successfully. Status: PENDING",
+                NotificationType.APPOINTMENT_CREATED
+        );
+
+        // Notify all admins about new appointment
+        notificationService.notifyAdmins(
+                savedAppointment.getId(),
+                "New Appointment",
+                "New appointment created by " + user.getFirstName() + " " + user.getLastName() +
+                " for " + appointmentDTO.getVehicleBrand() + " " + appointmentDTO.getModel(),
+                NotificationType.APPOINTMENT_CREATED
+        );
+
+        return savedAppointment;
     }
 
     // Get all appointments for the logged-in customer
@@ -83,7 +106,7 @@ public class AppointmentService {
     // Convert Appointment to AppointmentAdminResponse with customer details
     private AppointmentAdminResponse convertToAdminResponse(Appointment appointment) {
         User customer = appointment.getUser();
-        
+
         // Get assigned employee name if exists
         String assignedEmployeeName = null;
         if (appointment.getAssignedEmployeeId() != null) {
@@ -93,7 +116,7 @@ public class AppointmentService {
                 assignedEmployeeName = emp.getFirstName() + " " + emp.getLastName();
             }
         }
-        
+
         return AppointmentAdminResponse.builder()
                 .id(appointment.getId())
                 .vehicleType(appointment.getVehicleType())
@@ -130,7 +153,20 @@ public class AppointmentService {
         }
 
         appointment.setStatus(AppointmentStatus.CONFIRMED);
-        return appointmentRepository.save(appointment);
+        Appointment savedAppointment = appointmentRepository.save(appointment);
+
+        // Notify customer about appointment confirmation
+        User customer = appointment.getUser();
+        notificationService.notifyCustomer(
+                customer.getId(),
+                appointmentId,
+                "Appointment Confirmed",
+                "Your appointment for " + appointment.getVehicleBrand() + " " + appointment.getModel() +
+                " has been confirmed by admin.",
+                NotificationType.APPOINTMENT_CONFIRMED
+        );
+
+        return savedAppointment;
     }
 
     // Admin: Reject appointment (change status to CANCELLED)
@@ -139,7 +175,20 @@ public class AppointmentService {
                 .orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
 
         appointment.setStatus(AppointmentStatus.CANCELLED);
-        return appointmentRepository.save(appointment);
+        Appointment savedAppointment = appointmentRepository.save(appointment);
+
+        // Notify customer about appointment cancellation
+        User customer = appointment.getUser();
+        notificationService.notifyCustomer(
+                customer.getId(),
+                appointmentId,
+                "Appointment Cancelled",
+                "Your appointment for " + appointment.getVehicleBrand() + " " + appointment.getModel() +
+                " has been cancelled by admin.",
+                NotificationType.APPOINTMENT_CANCELLED
+        );
+
+        return savedAppointment;
     }
 
     // Admin: Assign employee to appointment (change status to IN_SERVICE)
@@ -153,11 +202,34 @@ public class AppointmentService {
 
         // Assign the employee
         appointment.setAssignedEmployeeId(employeeId);
-        
+
         // Change status to IN_SERVICE
         appointment.setStatus(AppointmentStatus.IN_SERVICE);
-        
-        return appointmentRepository.save(appointment);
+
+        Appointment savedAppointment = appointmentRepository.save(appointment);
+
+        // Notify employee about assignment
+        notificationService.notifyEmployee(
+                employeeId,
+                appointmentId,
+                "New Appointment Assigned",
+                "You have been assigned to service " + appointment.getVehicleBrand() + " " +
+                appointment.getModel() + " (Reg: " + appointment.getRegisterNumber() + ")",
+                NotificationType.EMPLOYEE_ASSIGNED
+        );
+
+        // Notify customer about employee assignment
+        User customer = appointment.getUser();
+        notificationService.notifyCustomer(
+                customer.getId(),
+                appointmentId,
+                "Employee Assigned",
+                "Employee " + employee.getFirstName() + " " + employee.getLastName() +
+                " has been assigned to your appointment. Service is now in progress.",
+                NotificationType.STATUS_CHANGED_IN_SERVICE
+        );
+
+        return savedAppointment;
     }
 
     // Customer: Cancel an appointment
@@ -181,6 +253,28 @@ public class AppointmentService {
         // Update status
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointmentRepository.save(appointment);
+
+        // Notify admins about cancellation
+        notificationService.notifyAdmins(
+                appointmentId,
+                "Appointment Cancelled by Customer",
+                "Customer " + appointment.getUser().getFirstName() + " " +
+                appointment.getUser().getLastName() + " cancelled appointment for " +
+                appointment.getVehicleBrand() + " " + appointment.getModel(),
+                NotificationType.APPOINTMENT_CANCELLED
+        );
+
+        // Notify assigned employee if exists
+        if (appointment.getAssignedEmployeeId() != null) {
+            notificationService.notifyEmployee(
+                    appointment.getAssignedEmployeeId(),
+                    appointmentId,
+                    "Appointment Cancelled",
+                    "The appointment for " + appointment.getVehicleBrand() + " " +
+                    appointment.getModel() + " has been cancelled by the customer.",
+                    NotificationType.APPOINTMENT_CANCELLED
+            );
+        }
     }
 
     // Employee: Get appointments assigned to employee
@@ -209,3 +303,4 @@ public class AppointmentService {
                 .build();
     }
 }
+
